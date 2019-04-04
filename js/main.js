@@ -1,58 +1,118 @@
 // Make useState accessible
-const { useState } = React;
+const { useState, useRef } = React;
+
+const ShoppingList = (props) => {
+    console.log("updating");
+    
+    return (
+        <ul className={props.classVal}>
+        {
+            props.items.map( (item, i) => 
+                <ListItem key={i} item={item.val} cat={item.cat} />
+            )
+        }
+        </ul>
+    )
+}
+
+const ListItem = (props) => {
+    
+    const [qty, setQty] = useState(1);
+    
+    const updateQty = (mod) => {
+        let currQty = qty;
+        setQty(Number(currQty += mod));
+    }
+    
+    return (
+        <li className={props.cat}>
+            {/* <IncrementButton symb="-" handleClick={props.setList} /> */}
+            <button onClick={() => updateQty(-1)}>-</button>
+            <span>{`${qty} ${props.item}`}</span>
+            <button onClick={() => updateQty(1)}>+</button>
+        </li>
+    )
+}
+
+const Categories = (props) => {
+    return (
+        <ul className={props.classVal}>
+        {
+            props.allCat.map( (cat, i) => 
+                <Category key={i} i={i} currCat={props.currCat} cat={cat} setCat={props.setCat}/>
+            )
+        }
+        </ul>
+    )
+}
+
+const Category = (props) => {
+    
+    const handleChange = (e) => {
+        console.log(e.target.value);
+        console.log("hell");
+        props.setCat(e.target.value);
+    }
+    return (
+        <li>
+            <input type="radio" onClick={handleChange} name="category" value={props.cat} id={`filter${props.i}`} checked={(props.currCat === props.cat) && "checked" } />
+            <label for={`filter${props.i}`}>{props.cat}</label>
+        </li>
+    )
+}
+
+// const IncrementButton = (props) => {
+    
+//     const updateQty = () => {
+//         props.handleClick([...props.fullList, {"name": "steak", "qty": Number(`${props.symb}1`), "cat":"meat"}]);
+//     }
+    
+//     return (
+//         <button onClick={() => updateQty()}>{props.symb}</button>
+//     )
+// }
+
+const AddItem = (props) => {
+    const newItemInput = useRef(null);
+    
+    const handleSubmit = (e) => {
+        let newItem = {val: newItemInput.current.value, cat: props.currCat};
+        props.setItem([...props.items, newItem]);
+        newItemInput.current.value = "";
+        e.preventDefault();
+    }
+    
+    return (
+        <div className="addnew">
+            <input type="text" name="item" id="item" className="form-component inpt" ref={newItemInput} placeholder="What do you need?" />
+            <input type="submit" value="Add" className="form-component btn" onClick={handleSubmit}/>
+        </div>
+    )
+}
 
 const App = () => {
-
-    const [myList, setList] = useState([
-        {item: "Steaks", qty: 3, cat: "meat"},
-    ]);
+    
+    const [items, setItem] = useState([]);
+    const [currCat, setCurrCat] = useState("all");
+    
+    const categories = [`all`, `meat`, `prod`, `dairy`, `dry`];
 
     return (
       <React.Fragment>
-        <header class="header">
+        <header className="header">
             <h1>Shopping List</h1>
         </header>
 
-        <form id="newItem" class="newitem" autocomplete="off">
-            <label for="item" class="line-label">New Item</label>
-            <div class="addnew">
-            <input type="text" name="item" id="item" class="form-component inpt" placeholder="What do you need?" />
-            <input type="submit" value="Add" class="form-component btn" />
-            </div>
+        <form id="newItem" className="newitem" autocomplete="off">
+            <label for="item" className="line-label">New Item</label>
+            <AddItem items={items} setItem={setItem} currCat={currCat} />
         </form>
-
+        
         <form id="filterCategories">
-            <ul class="filters">
-            <li><input type="radio" name="category" value="all" id="filter0" checked /><label for="filter0">all</label></li>
-            <li><input type="radio" name="category" value="meat" id="filter1" /><label for="filter1">meat</label></li>
-            <li><input type="radio" name="category" value="prod" id="filter2" /><label for="filter2">prod</label></li>
-            <li><input type="radio" name="category" value="dairy" id="filter3" /><label for="filter3">dairy</label></li>
-            <li><input type="radio" name="category" value="dry" id="filter4" /><label for="filter4">dry</label></li>
-            </ul>
+            <Categories classVal="filters" currCat={currCat} allCat={categories} setCat={setCurrCat} />
         </form>
-
-        <ul id="shoppinglist" class="shoppinglist">
-            <li class="meat">
-                <button data-id="0" data-step="-1">-</button>
-                <span>3 Steaks</span>
-                <button data-id="0" data-step="1">+</button>
-            </li>
-            <li class="prod">
-                <button data-id="0" data-step="-1">-</button>
-                <span>2 Apples</span>
-                <button data-id="0" data-step="1">+</button>
-            </li>
-            <li class="dairy">
-                <button data-id="0" data-step="-1">-</button>
-                <span>1 Milk (2L, 2%)</span>
-                <button data-id="0" data-step="1">+</button>
-            </li>
-            <li class="dry">
-                <button data-id="0" data-step="-1">-</button>
-                <span>4 Mac & Cheese</span>
-                <button data-id="0" data-step="1">+</button>
-            </li>
-        </ul>
+        
+        <ShoppingList items={items} classVal="shoppinglist" setCat={setCurrCat} />
       </React.Fragment>
     );
 };
