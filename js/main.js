@@ -1,4 +1,3 @@
-// Make useState accessible
 const { useState, useRef } = React;
 
 const ShoppingList = (props) => {
@@ -19,22 +18,36 @@ const ListItem = (props) => {
     
     const [qty, setQty] = useState(1);
     
-    const updateQty = (mod) => {
-        let currQty = qty;
-        setQty(Number(currQty += mod));
-    }
-    
     return (
         <li className={props.cat}>
-            {/* <IncrementButton symb="-" handleClick={props.setList} /> */}
-            <button onClick={() => updateQty(-1)}>-</button>
+            <IncrementButton symb="-" currQty={qty} handleClick={setQty} />
             <span>{`${qty} ${props.item}`}</span>
-            <button onClick={() => updateQty(1)}>+</button>
+            <IncrementButton symb="+" currQty={qty} handleClick={setQty} />
         </li>
     )
 }
 
+const IncrementButton = (props) => {
+    
+    const updateQty = () => {
+        let currQty = props.currQty;
+        if (props.symb == "-" && !(currQty <= 1)) {
+            console.log(-1);
+            props.handleClick(Number(currQty += -1));
+        }
+        else if (props.symb == "+") {
+            console.log(1);
+            props.handleClick(Number(currQty += 1));
+        }
+    }
+    
+    return (
+        <button onClick={() => updateQty()}>{props.symb}</button>
+    )
+}
+
 const Categories = (props) => {
+    
     return (
         <ul className={props.classVal}>
         {
@@ -61,24 +74,24 @@ const Category = (props) => {
     )
 }
 
-// const IncrementButton = (props) => {
-    
-//     const updateQty = () => {
-//         props.handleClick([...props.fullList, {"name": "steak", "qty": Number(`${props.symb}1`), "cat":"meat"}]);
-//     }
-    
-//     return (
-//         <button onClick={() => updateQty()}>{props.symb}</button>
-//     )
-// }
-
 const AddItem = (props) => {
     const newItemInput = useRef(null);
     
     const handleSubmit = (e) => {
         let newItem = {val: newItemInput.current.value, cat: props.currCat};
-        props.setItem([...props.items, newItem]);
-        newItemInput.current.value = "";
+        let valid = props.items.filter( item => {
+            let tempItem = newItem.val.toLowerCase();
+            item.val = item.val.toLowerCase();
+            return item.val == tempItem;
+        });
+        
+        if (valid.length == 0) {
+            props.setItem([...props.items, newItem]);
+            newItemInput.current.value = "";
+        }
+        else {
+            alert("Already on the list!");
+        }
         e.preventDefault();
     }
     
@@ -91,7 +104,7 @@ const AddItem = (props) => {
 }
 
 const App = () => {
-    
+
     const [items, setItem] = useState([]);
     const [currCat, setCurrCat] = useState("all");
     
