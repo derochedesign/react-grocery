@@ -95,7 +95,12 @@ h1 {
 .shoppinglist li button:first-child { text-align: left; }
 .shoppinglist li button:last-child { text-align: right; }
 
-
+.delete-button {
+    width: 1em;
+    color: red;
+    font-size: 1em;
+    margin-left: 2em;
+}
 
 
 

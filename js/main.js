@@ -1,13 +1,14 @@
-const { useState, useRef } = React;
+const { useState, useRef, useEffect} = React;
 
 const ShoppingList = (props) => {
-    console.log("updating");
+    
+    const [qty, setQty] = useState([]);
     
     return (
         <ul className={props.classVal}>
         {
             props.items.map( (item, i) => 
-                <ListItem key={i} item={item.val} cat={item.cat} />
+                (props.currCat == item.cat || props.currCat == "all") && <ListItem key={i} i={i} qty={qty} setQty={setQty} allItems={props.items} item={item.val} setItem={props.setItem} cat={item.cat}/>
             )
         }
         </ul>
@@ -16,33 +17,53 @@ const ShoppingList = (props) => {
 
 const ListItem = (props) => {
     
-    const [qty, setQty] = useState(1);
+    let qtyArr = props.qty;
+    
+    const deleteItem = () => {
+        let tempArr = props.allItems;
+        tempArr.splice(props.i, 1);
+        qtyArr.splice(props.i, 1);
+        props.setItem([...tempArr]);
+        props.setQty([...qtyArr]);
+    }
+    
+    //default a new qty to 1
+    (qtyArr[props.i] == undefined) ? qtyArr[props.i]=1 : qtyArr=qtyArr;
     
     return (
         <li className={props.cat}>
-            <IncrementButton symb="-" currQty={qty} handleClick={setQty} />
-            <span>{`${qty} ${props.item}`}</span>
-            <IncrementButton symb="+" currQty={qty} handleClick={setQty} />
+            <IncrementButton symb="-" qty={qtyArr} i={props.i} setQty={props.setQty} />
+            <span>
+                {`${qtyArr[props.i]} ${props.item}`}
+                <button onClick={deleteItem} className="delete-button">x</button>
+            </span>
+            
+            <IncrementButton symb="+" qty={qtyArr} i={props.i} setQty={props.setQty} />
         </li>
     )
 }
 
 const IncrementButton = (props) => {
     
+    let qtyArr = props.qty;
+    
     const updateQty = () => {
-        let currQty = props.currQty;
-        if (props.symb == "-" && !(currQty <= 1)) {
-            console.log(-1);
-            props.handleClick(Number(currQty += -1));
+        let currQty = props.qty[props.i];
+        
+        if (!(currQty <= 1) && (props.symb == "-")) {
+            currQty--;
+            qtyArr[props.i] = currQty;
+            props.setQty([...qtyArr]);
         }
-        else if (props.symb == "+") {
-            console.log(1);
-            props.handleClick(Number(currQty += 1));
+        else if ((props.symb == "+")) {
+            currQty++;
+            qtyArr[props.i] = currQty;
+            props.setQty([...qtyArr]);
         }
     }
     
     return (
-        <button onClick={() => updateQty()}>{props.symb}</button>
+        <button onClick={updateQty}>{props.symb}</button>
     )
 }
 
@@ -60,22 +81,15 @@ const Categories = (props) => {
 }
 
 const Category = (props) => {
-    
-    const handleChange = (e) => {
-        console.log(e.target.value);
-        console.log("hell");
-        props.setCat(e.target.value);
-    }
     return (
         <li>
-            <input type="radio" onClick={handleChange} name="category" value={props.cat} id={`filter${props.i}`} checked={(props.currCat === props.cat) && "checked" } />
+            <input type="radio" onClick={(e) => props.setCat(e.target.value)} name="category" value={props.cat} id={`filter${props.i}`} checked={(props.currCat === props.cat) && "checked" } />
             <label for={`filter${props.i}`}>{props.cat}</label>
         </li>
     )
 }
-
-const AddItem = (props) => {
-    const newItemInput = useRef(null);
+const AddItem = props => {
+    const newItemInput = useRef();
     
     const handleSubmit = (e) => {
         let newItem = {val: newItemInput.current.value, cat: props.currCat};
@@ -103,18 +117,30 @@ const AddItem = (props) => {
     )
 }
 
+const HeaderInfo = props => {
+    return (
+        <header className="header">
+            <h1>{props.theTitle}</h1>
+        </header>
+    )
+}
+
 const App = () => {
 
     const [items, setItem] = useState([]);
+    
     const [currCat, setCurrCat] = useState("all");
     
     const categories = [`all`, `meat`, `prod`, `dairy`, `dry`];
+    const title = "Shopping List";
+    
+    useEffect(() => {
+        document.title = `Grocery List: ${items.length} Items`;
+    });
 
     return (
       <React.Fragment>
-        <header className="header">
-            <h1>Shopping List</h1>
-        </header>
+        <HeaderInfo theTitle={title}/>
 
         <form id="newItem" className="newitem" autocomplete="off">
             <label for="item" className="line-label">New Item</label>
@@ -125,7 +151,7 @@ const App = () => {
             <Categories classVal="filters" currCat={currCat} allCat={categories} setCat={setCurrCat} />
         </form>
         
-        <ShoppingList items={items} classVal="shoppinglist" setCat={setCurrCat} />
+        <ShoppingList setItem={setItem} items={items} classVal="shoppinglist" currCat={currCat} setCat={setCurrCat} />
       </React.Fragment>
     );
 };
