@@ -1,73 +1,59 @@
-const { useState, useRef, useEffect} = React;
+const { useState, useRef, useEffect, useContext} = React;
+
+const ListContext = React.createContext({});
 
 const ShoppingList = (props) => {
     
-    const [qty, setQty] = useState([]);
+    console.log("refreshing ShoppingList");
+     
+    // const [qty, setQty] = useState([]);
     
     return (
         <ul className={props.classVal}>
         {
             props.items.map( (item, i) => 
-                (props.currCat == item.cat || props.currCat == "all") && <ListItem key={i} i={i} qty={qty} setQty={setQty} allItems={props.items} item={item.val} setItem={props.setItem} cat={item.cat}/>
+                (props.currCat == item.cat || props.currCat == "all") && <ListItem key={i} i={i} item={item.val} id={item.id} cat={item.cat}/>
             )
         }
         </ul>
     )
 }
 
-const ListItem = (props) => {
+const ListItem = props => {
     
-    let qtyArr = props.qty;
+    let newQty = useContext(ListContext);
+    let thisItemIndex = newQty.data.findIndex(item => item.id == props.id);
+    
+    console.log("refreshing ListItem");
+    
+    const [qty, setQty] = useState(newQty.data[thisItemIndex].qty);
+    newQty.data[thisItemIndex].qty = qty;
+    newQty.update();
     
     const deleteItem = () => {
-        let tempArr = props.allItems;
-        tempArr.splice(props.i, 1);
-        qtyArr.splice(props.i, 1);
-        props.setItem([...tempArr]);
-        props.setQty([...qtyArr]);
+        let tempArr = newQty.data;
+        tempArr.splice([thisItemIndex], 1);
+        newQty.data = [...tempArr];
+        newQty.update();
+        console.log(newQty);
+        
     }
-    
-    //default a new qty to 1
-    (qtyArr[props.i] == undefined) ? qtyArr[props.i]=1 : qtyArr=qtyArr;
     
     return (
         <li className={props.cat}>
-            <IncrementButton symb="-" qty={qtyArr} i={props.i} setQty={props.setQty} />
+            <button onClick={(qty > 1) && (() => setQty(qty - 1))}>-</button>
             <span>
-                {`${qtyArr[props.i]} ${props.item}`}
+                {`${qty} ${props.item}`}
                 <button onClick={deleteItem} className="delete-button">x</button>
             </span>
-            
-            <IncrementButton symb="+" qty={qtyArr} i={props.i} setQty={props.setQty} />
+            <button onClick={() => setQty(qty + 1)}>+</button>
         </li>
     )
 }
 
-const IncrementButton = (props) => {
+const Categories = props => {
     
-    let qtyArr = props.qty;
-    
-    const updateQty = () => {
-        let currQty = props.qty[props.i];
-        
-        if (!(currQty <= 1) && (props.symb == "-")) {
-            currQty--;
-            qtyArr[props.i] = currQty;
-            props.setQty([...qtyArr]);
-        }
-        else if ((props.symb == "+")) {
-            currQty++;
-            qtyArr[props.i] = currQty;
-            props.setQty([...qtyArr]);
-        }
-    }
-    
-    return (
-        <button onClick={updateQty}>{props.symb}</button>
-    )
-}
-
-const Categories = (props) => {
+    console.log("refreshing Categories");
     
     return (
         <ul className={props.classVal}>
@@ -80,7 +66,10 @@ const Categories = (props) => {
     )
 }
 
-const Category = (props) => {
+const Category = props => {
+    
+    console.log("refreshing Category");
+    
     return (
         <li>
             <input type="radio" onClick={(e) => props.setCat(e.target.value)} name="category" value={props.cat} id={`filter${props.i}`} checked={(props.currCat === props.cat) && "checked" } />
@@ -89,10 +78,15 @@ const Category = (props) => {
     )
 }
 const AddItem = props => {
+    
+    console.log("refreshing AddItem");
+    
     const newItemInput = useRef();
     
-    const handleSubmit = (e) => {
-        let newItem = {val: newItemInput.current.value, cat: props.currCat};
+    const handleSubmit = e => {
+        let randomID = Math.floor(Math.random() * 1000000000);
+        //make sure to check all id's for dup
+        let newItem = {val: newItemInput.current.value, qty:1, cat: props.currCat, id:randomID};
         let valid = props.items.filter( item => {
             let tempItem = newItem.val.toLowerCase();
             item.val = item.val.toLowerCase();
@@ -118,6 +112,9 @@ const AddItem = props => {
 }
 
 const HeaderInfo = props => {
+    
+    console.log("refreshing HeaderInfo");
+    
     return (
         <header className="header">
             <h1>{props.theTitle}</h1>
@@ -126,7 +123,9 @@ const HeaderInfo = props => {
 }
 
 const App = () => {
-
+    
+    console.log("refreshing App");
+    // let listData = JSON.parse(localStorage.getItem('list')) || [];
     const [items, setItem] = useState([]);
     
     const [currCat, setCurrCat] = useState("all");
@@ -137,9 +136,14 @@ const App = () => {
     useEffect(() => {
         document.title = `Grocery List: ${items.length} Items`;
     });
+    
+    const updateLocalStorage = () => {
+        console.log("test");
+        
+    }
 
     return (
-      <React.Fragment>
+      <ListContext.Provider value={{ data: items, update:updateLocalStorage}}>
         <HeaderInfo theTitle={title}/>
 
         <form id="newItem" className="newitem" autocomplete="off">
@@ -152,7 +156,7 @@ const App = () => {
         </form>
         
         <ShoppingList setItem={setItem} items={items} classVal="shoppinglist" currCat={currCat} setCat={setCurrCat} />
-      </React.Fragment>
+      </ListContext.Provider>
     );
 };
 
